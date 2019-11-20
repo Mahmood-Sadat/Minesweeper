@@ -1,0 +1,203 @@
+<html>
+
+<head>
+<title>
+    Minesweeper made in jQuery!
+</title>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<link href="./minesweeper.css" rel="stylesheet" type="text/css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+
+</head>
+
+<body>
+
+<h1 class="title">Minesweeper</h1>
+<h4 Class="subheading">Your task is to use this program to successfully disarm a field that has been planted with bombs. A bomb-disarming robot will follow your instruction, so you must be careful. Good Luck!</h4>
+
+
+<div id="board"></div>
+
+
+</body>
+
+
+
+
+
+
+
+<script>
+$(document).ready(function(){
+
+
+const $board = $("#board");
+
+ const ROWS = 10;
+ const COLUMNS = 10;
+
+// var arr = new Array(row);
+
+//      for (var i=0; i < arr.length; i++) {
+//          arr[i] = new Array(column);
+//      }
+
+//      console.log(arr);
+
+function createBoard(row, column) {
+    //When the restart function runs, this prevents extra boards from being created
+    $board.empty();
+    for (var i=0; i < row; i++) {
+       const $rows = $('<div></div>').addClass('row');
+//arr[i].push($rows);
+        for (var j=0; j < column; j++){
+            const $cols = $('<div></div>')
+            .addClass('cols hidden')
+            .attr('data-row', i)
+            .attr('data-cols', j);
+//adding a class of "bomb" to a cell if Math.random() generates a number that is less than 0.10. Anything higher would increase the difficulty of the game. 
+                if (Math.random() < 0.1) {
+                    $cols.addClass("bomb");
+                }
+            $rows.append($cols);
+     //       arr[j].push($cols);
+
+        }
+        $board.append($rows);
+    }
+
+
+}
+//console.log(arr)
+createBoard(10, 10);
+
+function restart() {
+    createBoard(ROWS, COLUMNS);
+}
+
+
+
+function gameOver(isWin) {
+
+    let message = null;
+
+    if (isWin) {
+        message = "THE FIELD IS SAFE!";
+ 
+        
+
+    } else {
+        message = "YOU DETONATED THE FIELD!";
+      
+
+    }
+    $('.cols.bomb').append($("<i>").addClass("fa fa-bomb"));
+    //The Alert doesn't give enough time for the bombs to be exposed, so a setTimeout function delays the message by half a second. 
+setTimeout(function() {
+    alert(message);
+    restart();
+}, 500)
+    
+
+}
+
+
+function reveal(oi, oj) {
+    const seen = {};
+
+    function helper(i, j) {
+        //Checks if out of bounds
+        if (i >= ROWS || j >= COLUMNS || i < 0 || j < 0) return;
+        const key = `${i} ${j}`
+         if (seen[key]) return;
+//Declaring $cell as the current element of focus. 
+
+        const $cell = 
+            $(`.cols.hidden[data-row=${i}][data-cols=${j}]`);
+
+//Get the bomb count from this coordinate.
+        const bombCount = getBombCount(i, j);  
+
+//If the cell is already exposed or is a bomb, return and wait for another valid cell. Else, just expose cell. 
+        if (
+            !$cell.hasClass('hidden') ||
+            $cell.hasClass('bomb')
+        ) {
+            return;
+        }
+        $cell.removeClass('hidden');
+//If bombCount is returned, return it in the cell.
+        if (bombCount) {
+            $cell.text(bombCount);
+            return;
+        }
+//Traverse through the surrounding cells (3x3). 
+        for (let di = -1; di <= 1; di++){
+            for (let dj = -1; dj <= 1; dj++ ) {
+                helper(i + di, j + dj);
+
+            }
+        }
+
+    }
+//Restart helper function with new selected cell coordinates. 
+
+    helper(oi, oj);
+}
+
+function getBombCount(i, j) {
+    let count = 0;
+//Checks surrounding cells (3x3). If cell is out of bounds, skip. If cell is a bomb, 1 to count. Return count when traversal is finished.   
+    for (let di = -1; di <= 1; di++){
+            for (let dj = -1; dj <= 1; dj++) {
+                const ni = i + di;
+                const nj = j + dj;
+                if (ni >= ROWS || nj >= COLUMNS || nj < 0 || ni < 0) continue;
+                const $cell = 
+                $(`.cols.hidden[data-row=${ni}][data-cols=${nj}]`);
+                if ($cell.hasClass('bomb')) count++;
+            }
+        }
+        return count;
+
+}
+
+$board.on('click', '.cols.hidden', function() {
+console.log($(this))
+
+  const $cell = $(this);
+
+const rowPoint = $cell.data('row');
+const colsPoint = $cell.data('cols');
+//const rowPoint = this.dataset.row;
+//const colsPoint = this.dataset.cols;
+console.log(rowPoint, colsPoint);
+//If Clicked cell has a bomb, go to the else method of gameOver (You lost).
+if ($cell.hasClass("bomb")) {
+    gameOver(false);
+} else {
+    //If cell isn't a bomb, go to the Reveal function with the coordinates of said cell. 
+    reveal(rowPoint, colsPoint);
+
+//All untouched cells have a class of "hidden", so if a cell is exposed, the "hidden" class is removed. 
+//If you cleared the field, the only cells with the class "hidden" would be the bombs.
+//Therefore, if the amount of cells with the class "hidden" are equal to the amount
+//of cells with the class "bomb", then the gameOver function is true (you won).
+    if ($('.cols.hidden').length === $('.cols.bomb').length){
+        gameOver(true);
+    }            
+   }
+ })
+
+})
+
+
+</script>
+
+
+
+</html>
